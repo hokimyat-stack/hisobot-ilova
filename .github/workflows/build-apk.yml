@@ -34,17 +34,22 @@ jobs:
       - name: Android loyihani generatsiya qilish (prebuild)
         run: npx expo prebuild --platform android --no-install
 
-      - name: Keystore tiklash
+      - name: Avtomatik Keystore yaratish
         run: |
-          echo "${{ secrets.KEYSTORE_BASE64 }}" | base64 -d > android/app/hisobot.keystore
+          keytool -genkeypair -v \
+            -keystore android/app/hisobot.keystore \
+            -alias androiddebugkey \
+            -keyalg RSA -keysize 2048 -validity 10000 \
+            -storepass android -keypass android \
+            -dname "CN=HisobotApp, OU=Dev, O=Org, L=Tashkent, C=UZ"
 
       - name: Imzolash sozlamalari
         run: |
           cat >> android/gradle.properties << EOF
           MYAPP_UPLOAD_STORE_FILE=hisobot.keystore
-          MYAPP_UPLOAD_KEY_ALIAS=${{ secrets.KEY_ALIAS }}
-          MYAPP_UPLOAD_STORE_PASSWORD=${{ secrets.KEYSTORE_PASSWORD }}
-          MYAPP_UPLOAD_KEY_PASSWORD=${{ secrets.KEY_PASSWORD }}
+          MYAPP_UPLOAD_KEY_ALIAS=androiddebugkey
+          MYAPP_UPLOAD_STORE_PASSWORD=android
+          MYAPP_UPLOAD_KEY_PASSWORD=android
           EOF
           python3 - << 'PYEOF'
           import re
