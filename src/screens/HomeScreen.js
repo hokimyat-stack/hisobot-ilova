@@ -1,4 +1,4 @@
-// src/screens/HomeScreen.js — Bosh sahifa v3: yangi ish, davom etayotgan ishlar, parol
+// src/screens/HomeScreen.js — Bosh sahifa v3: yangi ish, davom etayotgan ishlar, parol (Theme qo'shilgan)
 import React, { useEffect, useState, useCallback } from 'react';
 import { View, Text, TouchableOpacity, StyleSheet, Alert, RefreshControl, ScrollView, ActivityIndicator } from 'react-native';
 import { useFocusEffect } from '@react-navigation/native';
@@ -8,7 +8,10 @@ import { menikiOl } from '../api';
 import { RANG, ILOVA_VERSIYA } from '../config';
 import { yangilanishniTekshir, apkYukla } from '../utils/appUpdate';
 
-export default function HomeScreen({ navigation }) {
+export default function HomeScreen({ route, navigation }) {
+  // App.js'dan kelgan theme parametrlari
+  const { isDarkMode, toggleTheme } = route.params || {};
+
   const [xodim, setXodim] = useState(null);
   const [navbatSoni, setNavbatSoni] = useState(0);
   const [yangilanish, setYangilanish] = useState(null); // {borMi, versiya, apkUrl, izoh}
@@ -45,10 +48,7 @@ export default function HomeScreen({ navigation }) {
     setYuklashFoizi(0);
     try {
       await apkYukla(yangilanish.apkUrl, setYuklashFoizi);
-      // Bu yerga odatda kelinmaydi — Android o'rnatish oynasi ochiladi
-    } catch (e) {
-      // Xato allaqachon apkYukla ichida Alert bilan ko'rsatildi
-    } finally {
+    } catch (e) {} finally {
       setYuklanmoqda(false);
     }
   }
@@ -73,15 +73,37 @@ export default function HomeScreen({ navigation }) {
   const bugun = new Date().toLocaleDateString('uz-UZ', { day: 'numeric', month: 'long', weekday: 'long' });
   const BOSQICH_NOMI = { BOSHLANDI: 'Boshlandi — davom bosqichi kerak', DAVOM_ETMOQDA: 'Davom etmoqda — yakun kerak' };
 
+  // Dinamik ranglar (Theme asosida)
+  const bgStyle = { backgroundColor: isDarkMode ? '#0F172A' : RANG.fon };
+  const cardBgStyle = { backgroundColor: isDarkMode ? '#1E293B' : RANG.oq, borderColor: isDarkMode ? '#334155' : RANG.chiziq };
+  const textPrimary = { color: isDarkMode ? '#F8FAFC' : RANG.toq };
+  const textSecondary = { color: isDarkMode ? '#94A3B8' : RANG.kul };
+
   return (
-    <ScrollView style={s.wrap} refreshControl={<RefreshControl refreshing={refresh} onRefresh={async () => { setRefresh(true); await yangila(); setRefresh(false); }} />}>
-      <View style={s.header}>
-        <View>
-          <Text style={s.salom}>Assalomu alaykum,</Text>
-          <Text style={s.fio}>{xodim?.fio || ''}</Text>
-          <Text style={s.bolim}>{bugun}</Text>
+    <ScrollView style={[s.wrap, bgStyle]} refreshControl={<RefreshControl refreshing={refresh} onRefresh={async () => { setRefresh(true); await yangila(); setRefresh(false); }} />}>
+      
+      {/* Header qismi: Salomlashuv, Chiqish va Theme almashtirgich */}
+      <View style={[s.header, cardBgStyle]}>
+        <View style={{ flex: 1 }}>
+          <Text style={[s.salom, textSecondary]}>Assalomu alaykum,</Text>
+          <Text style={[s.fio, textPrimary]}>{xodim?.fio || ''}</Text>
+          <Text style={[s.bolim, textSecondary]}>{bugun}</Text>
         </View>
-        <TouchableOpacity onPress={chiqish}><Text style={s.chiqish}>Chiqish</Text></TouchableOpacity>
+
+        {/* O'ng tarafda Chiqish tugmasining yonidagi Theme va Chiqish bloki */}
+        <View style={s.headerRight}>
+          {/* Theme almashtirish tugmasi (🌙 / ☀️) */}
+          <TouchableOpacity 
+            style={[s.themeBtn, { backgroundColor: isDarkMode ? '#334155' : '#F1F5F9' }]} 
+            onPress={toggleTheme}
+          >
+            <Text style={{ fontSize: 16 }}>{isDarkMode ? '☀️' : '🌙'}</Text>
+          </TouchableOpacity>
+
+          <TouchableOpacity onPress={chiqish}>
+            <Text style={s.chiqish}>Chiqish</Text>
+          </TouchableOpacity>
+        </View>
       </View>
 
       {yangilanish && (
@@ -110,7 +132,7 @@ export default function HomeScreen({ navigation }) {
         </TouchableOpacity>
       )}
 
-      <TouchableOpacity style={s.asosiyBtn} onPress={() => navigation.navigate('NewReport')}>
+      <TouchableOpacity style={s.asosiyBtn} onPress={() => navigation.navigate('NewReport', { isDarkMode, toggleTheme })}>
         <Text style={s.asosiyPlus}>＋</Text>
         <Text style={s.asosiyText}>YANGI ISH BOSHLASH</Text>
         <Text style={s.asosiySub}>1-bosqich: boshlandi</Text>
@@ -119,12 +141,12 @@ export default function HomeScreen({ navigation }) {
       {kutish ? <ActivityIndicator style={{ marginTop: 10 }} color={RANG.asosiy} /> : (
         davomEtayotgan.length > 0 && (
           <View style={s.davomWrap}>
-            <Text style={s.davomSarlavha}>Davom etayotgan ishlaringiz ({davomEtayotgan.length})</Text>
+            <Text style={[s.davomSarlavha, textPrimary]}>Davom etayotgan ishlaringiz ({davomEtayotgan.length})</Text>
             {davomEtayotgan.map(h => (
-              <TouchableOpacity key={h.id} style={s.davomCard}
-                onPress={() => navigation.navigate('Stage', { hisobot: h })}>
+              <TouchableOpacity key={h.id} style={[s.davomCard, cardBgStyle]}
+                onPress={() => navigation.navigate('Stage', { hisobot: h, isDarkMode, toggleTheme })}>
                 <View style={{ flex: 1 }}>
-                  <Text style={s.davomIsh} numberOfLines={1}>{h.ishNomi || h.ishTuri}</Text>
+                  <Text style={[s.davomIsh, textPrimary]} numberOfLines={1}>{h.ishNomi || h.ishTuri}</Text>
                   <Text style={s.davomBosqich}>{BOSQICH_NOMI[h.bosqich]}</Text>
                 </View>
                 <Text style={s.davomOq}>→</Text>
@@ -134,36 +156,38 @@ export default function HomeScreen({ navigation }) {
         )
       )}
 
-      <TouchableOpacity style={s.ikkinchiBtn} onPress={() => navigation.navigate('MyReports')}>
-        <Text style={s.ikkinchiText}>Mening hisobotlarim</Text>
-        <Text style={s.ikkinchiSub}>Tarix, statuslar va oylik statistika</Text>
+      <TouchableOpacity style={[s.ikkinchiBtn, cardBgStyle]} onPress={() => navigation.navigate('MyReports', { isDarkMode, toggleTheme })}>
+        <Text style={[s.ikkinchiText, textPrimary]}>Mening hisobotlarim</Text>
+        <Text style={[s.ikkinchiSub, textSecondary]}>Tarix, statuslar va oylik statistika</Text>
       </TouchableOpacity>
 
-      <TouchableOpacity style={s.ikkinchiBtn} onPress={() => navigation.navigate('PasswordChange')}>
-        <Text style={s.ikkinchiText}>Parolni almashtirish</Text>
-        <Text style={s.ikkinchiSub}>Xavfsizlik uchun tavsiya etiladi</Text>
+      <TouchableOpacity style={[s.ikkinchiBtn, cardBgStyle]} onPress={() => navigation.navigate('PasswordChange', { isDarkMode, toggleTheme })}>
+        <Text style={[s.ikkinchiText, textPrimary]}>Parolni almashtirish</Text>
+        <Text style={[s.ikkinchiSub, textSecondary]}>Xavfsizlik uchun tavsiya etiladi</Text>
       </TouchableOpacity>
 
-      <View style={s.info}>
-        <Text style={s.infoTitle}>Eslatmalar</Text>
-        <Text style={s.infoRow}>• Har ish 3 bosqichda yuklanadi: boshlandi → davom etmoqda → yakunlandi</Text>
-        <Text style={s.infoRow}>• Rasmlar faqat kameradan olinadi</Text>
-        <Text style={s.infoRow}>• Rad etilgan hisobotga bildirishnoma keladi, sababi ko'rsatiladi</Text>
-        <Text style={s.infoRow}>• Belgilangan vaqtda keyingi bosqich uchun eslatma keladi</Text>
+      <View style={[s.info, cardBgStyle]}>
+        <Text style={[s.infoTitle, textPrimary]}>Eslatmalar</Text>
+        <Text style={[s.infoRow, textSecondary]}>• Har ish 3 bosqichda yuklanadi: boshlandi → davom etmoqda → yakunlandi</Text>
+        <Text style={[s.infoRow, textSecondary]}>• Rasmlar faqat kameradan olinadi</Text>
+        <Text style={[s.infoRow, textSecondary]}>• Rad etilgan hisobotga bildirishnoma keladi, sababi ko'rsatiladi</Text>
+        <Text style={[s.infoRow, textSecondary]}>• Belgilangan vaqtda keyingi bosqich uchun eslatma keladi</Text>
       </View>
 
-      <Text style={s.versiya}>SysOne · Kunlik Hisobot v{ILOVA_VERSIYA}</Text>
+      <Text style={[s.versiya, textSecondary]}>SysOne · Kunlik Hisobot v{ILOVA_VERSIYA}</Text>
     </ScrollView>
   );
 }
 
 const s = StyleSheet.create({
-  wrap: { flex: 1, backgroundColor: RANG.fon },
-  header: { flexDirection: 'row', justifyContent: 'space-between', padding: 20, paddingTop: 54, backgroundColor: RANG.oq, borderBottomWidth: 1, borderColor: RANG.chiziq },
-  salom: { color: RANG.kul, fontSize: 13 },
-  fio: { fontSize: 20, fontWeight: '800', color: RANG.toq, marginTop: 2 },
-  bolim: { color: RANG.kul, fontSize: 12.5, marginTop: 2 },
-  chiqish: { color: RANG.qizil, fontWeight: '600', fontSize: 13, paddingTop: 6 },
+  wrap: { flex: 1 },
+  header: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', padding: 20, paddingTop: 54, borderBottomWidth: 1 },
+  salom: { fontSize: 13 },
+  fio: { fontSize: 20, fontWeight: '800', marginTop: 2 },
+  bolim: { fontSize: 12.5, marginTop: 2 },
+  headerRight: { flexDirection: 'row', alignItems: 'center', gap: 10 },
+  themeBtn: { width: 36, height: 36, borderRadius: 10, justifyContent: 'center', alignItems: 'center' },
+  chiqish: { color: RANG.qizil, fontWeight: '600', fontSize: 13 },
   yangiBanner: { backgroundColor: '#FFF6E5', margin: 16, marginBottom: 0, padding: 12, borderRadius: 10, borderWidth: 1, borderColor: '#F1D48A' },
   yangiText: { color: '#8A6200', fontSize: 13, fontWeight: '600' },
   yangiYuklashWrap: { flexDirection: 'row', alignItems: 'center', gap: 8, marginTop: 10 },
@@ -179,16 +203,16 @@ const s = StyleSheet.create({
   asosiyText: { color: '#fff', fontWeight: '800', fontSize: 16, letterSpacing: 0.5, marginTop: 6 },
   asosiySub: { color: '#CFE0F7', fontSize: 12, marginTop: 6 },
   davomWrap: { marginHorizontal: 16, marginTop: 4 },
-  davomSarlavha: { fontWeight: '700', color: RANG.toq, fontSize: 13, marginBottom: 8 },
-  davomCard: { flexDirection: 'row', alignItems: 'center', backgroundColor: RANG.oq, borderRadius: 12, padding: 14, marginBottom: 8, borderWidth: 1, borderColor: RANG.chiziq },
-  davomIsh: { fontWeight: '700', color: RANG.toq, fontSize: 14 },
+  davomSarlavha: { fontWeight: '700', fontSize: 13, marginBottom: 8 },
+  davomCard: { flexDirection: 'row', alignItems: 'center', borderRadius: 12, padding: 14, marginBottom: 8, borderWidth: 1 },
+  davomIsh: { fontWeight: '700', fontSize: 14 },
   davomBosqich: { color: RANG.sariq, fontSize: 12, marginTop: 3, fontWeight: '600' },
   davomOq: { fontSize: 20, color: RANG.asosiy },
-  ikkinchiBtn: { backgroundColor: RANG.oq, marginHorizontal: 16, marginTop: 10, borderRadius: 14, padding: 18, borderWidth: 1, borderColor: RANG.chiziq },
-  ikkinchiText: { fontWeight: '700', fontSize: 16, color: RANG.toq },
-  ikkinchiSub: { color: RANG.kul, fontSize: 12.5, marginTop: 3 },
-  info: { margin: 16, backgroundColor: RANG.oq, borderRadius: 14, padding: 16, borderWidth: 1, borderColor: RANG.chiziq },
-  infoTitle: { fontWeight: '700', color: RANG.toq, marginBottom: 8 },
-  infoRow: { color: '#4B5866', fontSize: 13, lineHeight: 22 },
-  versiya: { textAlign: 'center', color: RANG.kul, fontSize: 11.5, marginBottom: 24 }
+  ikkinchiBtn: { marginHorizontal: 16, marginTop: 10, borderRadius: 14, padding: 18, borderWidth: 1 },
+  ikkinchiText: { fontWeight: '700', fontSize: 16 },
+  ikkinchiSub: { fontSize: 12.5, marginTop: 3 },
+  info: { margin: 16, borderRadius: 14, padding: 16, borderWidth: 1 },
+  infoTitle: { fontWeight: '700', marginBottom: 8 },
+  infoRow: { fontSize: 13, lineHeight: 22 },
+  versiya: { textAlign: 'center', fontSize: 11.5, marginBottom: 24 }
 });
