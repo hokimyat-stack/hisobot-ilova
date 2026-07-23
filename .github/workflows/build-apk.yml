@@ -38,7 +38,15 @@ jobs:
         env:
           KEYSTORE_BASE64: ${{ secrets.KEYSTORE_BASE64 }}
         run: |
-          python3 -c "import base64, os; open('android/app/hisobot.keystore', 'wb').write(base64.b64decode(os.environ['KEYSTORE_BASE64'].strip()))"
+          python3 -c "
+          import base64, os
+          s = os.environ.get('KEYSTORE_BASE64', '').strip()
+          s = ''.join(s.split())
+          missing_padding = len(s) % 4
+          if missing_padding:
+              s += '=' * (4 - missing_padding)
+          open('android/app/hisobot.keystore', 'wb').write(base64.b64decode(s))
+          "
 
       - name: Imzolash sozlamalari
         run: |
