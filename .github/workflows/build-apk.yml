@@ -1,61 +1,50 @@
 # .github/workflows/build-apk.yml
 name: APK Build
-
 on:
   push:
     branches: [main]
     tags: ['v*']
   workflow_dispatch:
-
 permissions:
   contents: write
-
 jobs:
   build:
     runs-on: ubuntu-latest
     steps:
       - name: Kodni olish
         uses: actions/checkout@v4
-
       - name: Node.js o'rnatish
         uses: actions/setup-node@v4
         with:
           node-version: 20
-
       - name: Java 17 o'rnatish
         uses: actions/setup-java@v4
         with:
           distribution: temurin
           java-version: 17
-
       - name: Paketlarni o'rnatish
         run: npm ci || npm install --legacy-peer-deps
-
       - name: Android loyihani generatsiya qilish (prebuild)
         run: npx expo prebuild --platform android --no-install
 
-      - name: Avtomatik Keystore yaratish
+      - name: Keystore'ni Secrets'dan tiklash
         run: |
-          keytool -genkeypair -v \
-            -keystore android/app/hisobot.keystore \
-            -alias androiddebugkey \
-            -keyalg RSA -keysize 2048 -validity 10000 \
-            -storepass android -keypass android \
-            -dname "CN=HisobotApp, OU=Dev, O=Org, L=Tashkent, C=UZ"
+          echo "${{ secrets.KEYSTORE_BASE64 }}" | base64 -d > android/app/hisobot.keystore
 
       - name: Imzolash sozlamalari
         run: |
           cat >> android/gradle.properties << EOF
           MYAPP_UPLOAD_STORE_FILE=hisobot.keystore
-          MYAPP_UPLOAD_KEY_ALIAS=androiddebugkey
-          MYAPP_UPLOAD_STORE_PASSWORD=android
-          MYAPP_UPLOAD_KEY_PASSWORD=android
+          MYAPP_UPLOAD_KEY_ALIAS=${{ secrets.KEY_ALIAS }}
+          MYAPP_UPLOAD_STORE_PASSWORD=${{ secrets.KEYSTORE_PASSWORD }}
+          MYAPP_UPLOAD_KEY_PASSWORD=${{ secrets.KEY_PASSWORD }}
           EOF
           python3 - << 'PYEOF'
           import re
           p = 'android/app/build.gradle'
           g = open(p).read()
-          g = g.replace("""signingConfigs {""", """signingConfigs {
+          if 'signingConfigs {\n            release {' not in g:
+              g = g.replace("""signingConfigs {""", """signingConfigs {
               release {
                   storeFile file(MYAPP_UPLOAD_STORE_FILE)
                   storePassword MYAPP_UPLOAD_STORE_PASSWORD
