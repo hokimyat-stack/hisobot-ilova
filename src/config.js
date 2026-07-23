@@ -1,8 +1,8 @@
 // src/config.js
-export const API_URL = 'http://192.168.137.1:8787'; // Test uchun; productionda Apps Script URL
-export const KALIT = 'TEST-XODIM'; // Code.gs dagi KALIT_XODIM bilan bir xil
+export const API_URL = 'https://script.google.com/macros/s/AKfycbxyIZQObWouqge3qNZs00w3S3fi1RYVnh8ijQTO-t-QIkLqJA7ip-P2ksW3nhj1CI-0/exec';
+export const KALIT = '7Kf92mQ';
 
-export const GITHUB_RELEASES = 'https://api.github.com/repos/SIZNING_USERNAME/hisobot-ilova/releases/latest';
+export const GITHUB_RELEASES = 'https://api.github.com/repos/hokimyat-stack/hisobot-ilova/releases/latest';
 export const ILOVA_VERSIYA = '3.0.0';
 
 export const RANG = {
