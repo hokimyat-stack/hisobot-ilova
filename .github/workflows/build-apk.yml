@@ -40,7 +40,7 @@ jobs:
 
       - name: Keystore tiklash
         run: |
-          echo "${{ secrets.KEYSTORE_BASE64 }}" | base64 -d > android/app/hisobot.keystore
+          echo "${{ secrets.KEYSTORE_BASE64 }}" | tr -d '\r\n ' | base64 -d > android/app/hisobot.keystore
 
       - name: Imzolash sozlamalari
         run: |
