@@ -5,12 +5,15 @@ import { useFocusEffect } from '@react-navigation/native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { navbatOl, navbatniYubor } from '../queue';
 import { menikiOl } from '../api';
-import { RANG, ILOVA_VERSIYA, GITHUB_RELEASES } from '../config';
+import { RANG, ILOVA_VERSIYA } from '../config';
+import { yangilanishniTekshir, apkYukla } from '../utils/appUpdate';
 
 export default function HomeScreen({ navigation }) {
   const [xodim, setXodim] = useState(null);
   const [navbatSoni, setNavbatSoni] = useState(0);
-  const [yangilanish, setYangilanish] = useState(null);
+  const [yangilanish, setYangilanish] = useState(null); // {borMi, versiya, apkUrl, izoh}
+  const [yuklanmoqda, setYuklanmoqda] = useState(false);
+  const [yuklashFoizi, setYuklashFoizi] = useState(0);
   const [refresh, setRefresh] = useState(false);
   const [davomEtayotgan, setDavomEtayotgan] = useState([]);
   const [kutish, setKutish] = useState(true);
@@ -34,11 +37,21 @@ export default function HomeScreen({ navigation }) {
   useFocusEffect(useCallback(() => { yangila(); }, [yangila]));
 
   useEffect(() => {
-    fetch(GITHUB_RELEASES).then(r => r.json()).then(rel => {
-      const v = (rel.tag_name || '').replace('v', '');
-      if (v && v !== ILOVA_VERSIYA) setYangilanish({ v, url: rel.html_url });
-    }).catch(() => {});
+    yangilanishniTekshir().then(r => { if (r.borMi) setYangilanish(r); }).catch(() => {});
   }, []);
+
+  async function yangilashBosildi() {
+    setYuklanmoqda(true);
+    setYuklashFoizi(0);
+    try {
+      await apkYukla(yangilanish.apkUrl, setYuklashFoizi);
+      // Bu yerga odatda kelinmaydi — Android o'rnatish oynasi ochiladi
+    } catch (e) {
+      // Xato allaqachon apkYukla ichida Alert bilan ko'rsatildi
+    } finally {
+      setYuklanmoqda(false);
+    }
+  }
 
   async function navbatYuborQolda() {
     const res = await navbatniYubor();
@@ -73,7 +86,17 @@ export default function HomeScreen({ navigation }) {
 
       {yangilanish && (
         <View style={s.yangiBanner}>
-          <Text style={s.yangiText}>Yangi versiya mavjud: v{yangilanish.v} — GitHub'dan yuklab oling</Text>
+          <Text style={s.yangiText}>Yangi versiya mavjud: v{yangilanish.versiya}</Text>
+          {yuklanmoqda ? (
+            <View style={s.yangiYuklashWrap}>
+              <ActivityIndicator size="small" color="#8A6200" />
+              <Text style={s.yangiYuklashText}>{yuklashFoizi}% yuklandi...</Text>
+            </View>
+          ) : (
+            <TouchableOpacity style={s.yangiBtn} onPress={yangilashBosildi}>
+              <Text style={s.yangiBtnText}>Yangilash</Text>
+            </TouchableOpacity>
+          )}
         </View>
       )}
 
@@ -143,6 +166,10 @@ const s = StyleSheet.create({
   chiqish: { color: RANG.qizil, fontWeight: '600', fontSize: 13, paddingTop: 6 },
   yangiBanner: { backgroundColor: '#FFF6E5', margin: 16, marginBottom: 0, padding: 12, borderRadius: 10, borderWidth: 1, borderColor: '#F1D48A' },
   yangiText: { color: '#8A6200', fontSize: 13, fontWeight: '600' },
+  yangiYuklashWrap: { flexDirection: 'row', alignItems: 'center', gap: 8, marginTop: 10 },
+  yangiYuklashText: { color: '#8A6200', fontSize: 12.5, fontWeight: '600' },
+  yangiBtn: { backgroundColor: '#8A6200', borderRadius: 8, paddingVertical: 9, alignItems: 'center', marginTop: 10 },
+  yangiBtnText: { color: '#fff', fontWeight: '700', fontSize: 13 },
   navbatCard: { flexDirection: 'row', alignItems: 'center', gap: 14, backgroundColor: '#FFF1EF', margin: 16, marginBottom: 0, padding: 14, borderRadius: 12, borderWidth: 1, borderColor: '#F3C1BB' },
   navbatSon: { fontSize: 30, fontWeight: '800', color: RANG.qizil },
   navbatTitle: { fontWeight: '700', color: RANG.toq },
