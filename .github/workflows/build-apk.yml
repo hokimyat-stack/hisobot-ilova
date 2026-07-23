@@ -34,19 +34,9 @@ jobs:
       - name: Android loyihani generatsiya qilish (prebuild)
         run: npx expo prebuild --platform android --no-install
 
-      - name: Keystore tiklash (Python bilan)
-        env:
-          KEYSTORE_BASE64: ${{ secrets.KEYSTORE_BASE64 }}
+      - name: Keystore tiklash
         run: |
-          python3 -c "
-          import base64, os
-          s = os.environ.get('KEYSTORE_BASE64', '').strip()
-          s = ''.join(s.split())
-          missing_padding = len(s) % 4
-          if missing_padding:
-              s += '=' * (4 - missing_padding)
-          open('android/app/hisobot.keystore', 'wb').write(base64.b64decode(s))
-          "
+          echo "${{ secrets.KEYSTORE_BASE64 }}" | base64 -d > android/app/hisobot.keystore
 
       - name: Imzolash sozlamalari
         run: |
