@@ -1,18 +1,14 @@
 # .github/workflows/build-apk.yml
-# ============================================================
-# AVTOMATIK APK BUILD — har main'ga push'da yangi APK chiqadi
-# ============================================================
-
 name: APK Build
 
 on:
   push:
     branches: [main]
     tags: ['v*']
-  workflow_dispatch:   # qo'lda ham ishga tushirish mumkin
+  workflow_dispatch:
 
 permissions:
-  contents: write      # Release yaratish uchun
+  contents: write
 
 jobs:
   build:
@@ -38,9 +34,11 @@ jobs:
       - name: Android loyihani generatsiya qilish (prebuild)
         run: npx expo prebuild --platform android --no-install
 
-      - name: Keystore tiklash
+      - name: Keystore tiklash (Python bilan)
+        env:
+          KEYSTORE_BASE64: ${{ secrets.KEYSTORE_BASE64 }}
         run: |
-          echo "${{ secrets.KEYSTORE_BASE64 }}" | tr -d '\r\n ' | base64 -d > android/app/hisobot.keystore
+          python3 -c "import base64, os; open('android/app/hisobot.keystore', 'wb').write(base64.b64decode(os.environ['KEYSTORE_BASE64'].strip()))"
 
       - name: Imzolash sozlamalari
         run: |
@@ -50,7 +48,6 @@ jobs:
           MYAPP_UPLOAD_STORE_PASSWORD=${{ secrets.KEYSTORE_PASSWORD }}
           MYAPP_UPLOAD_KEY_PASSWORD=${{ secrets.KEY_PASSWORD }}
           EOF
-          # signingConfig'ni release'ga ulash
           python3 - << 'PYEOF'
           import re
           p = 'android/app/build.gradle'
@@ -87,4 +84,3 @@ jobs:
           body: |
             📱 Kunlik Ish Hisoboti — Android APK
             O'rnatish: APK'ni yuklab oling → ochib o'rnating
-            ("Noma'lum manba" ruxsatini berish kerak bo'lishi mumkin)
