@@ -6,9 +6,14 @@
     "orientation": "portrait",
     "userInterfaceStyle": "light",
     "backgroundColor": "#F6F8FB",
+    "icon": "./assets/icon.png",
     "android": {
       "package": "uz.sysone.hisobot",
       "versionCode": 1,
+      "adaptiveIcon": {
+        "foregroundImage": "./assets/icon.png",
+        "backgroundColor": "#F6F8FB"
+      },
       "permissions": [
         "CAMERA",
         "ACCESS_FINE_LOCATION",
