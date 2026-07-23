@@ -1,0 +1,29 @@
+{
+  "expo": {
+    "name": "Kunlik Hisobot",
+    "slug": "kunlik-hisobot",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "userInterfaceStyle": "light",
+    "backgroundColor": "#F6F8FB",
+    "android": {
+      "package": "uz.sysone.hisobot",
+      "versionCode": 1,
+      "permissions": [
+        "CAMERA",
+        "ACCESS_FINE_LOCATION",
+        "ACCESS_COARSE_LOCATION",
+        "POST_NOTIFICATIONS"
+      ],
+      "blockedPermissions": [
+        "READ_EXTERNAL_STORAGE",
+        "READ_MEDIA_IMAGES"
+      ]
+    },
+    "plugins": [
+      ["expo-camera", { "cameraPermission": "Hisobot uchun ish joyidan jonli surat olish kerak" }],
+      ["expo-location", { "locationWhenInUsePermission": "Hisobotga ish joyi lokatsiyasi avtomatik yoziladi" }],
+      "expo-notifications"
+    ]
+  }
+}
