@@ -1,4 +1,4 @@
-// App.js — Kunlik Ish Hisoboti mobil ilovasi v3
+// App.js — Kunlik Ish Hisoboti mobil ilovasi v3 (Theme qo'shilgan versiya)
 import React, { useEffect, useState } from 'react';
 import { NavigationContainer } from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
@@ -57,40 +57,65 @@ async function pushTokenRoyxatOl(xodimId) {
 export default function App() {
   const [tayyor, setTayyor] = useState(false);
   const [xodim, setXodim] = useState(null);
+  const [isDarkMode, setIsDarkMode] = useState(false);
 
   useEffect(() => {
     (async () => {
-      const saqlangan = await AsyncStorage.getItem('XODIM');
-      if (saqlangan) {
-        const x = JSON.parse(saqlangan);
-        setXodim(x);
-        pushTokenRoyxatOl(x.id);
-      }
+      // Saqlangan xodim va temani o'qib olish
+      try {
+        const [saqlanganXodim, saqlanganTema] = await Promise.all([
+          AsyncStorage.getItem('XODIM'),
+          AsyncStorage.getItem('THEME')
+        ]);
+
+        if (saqlanganXodim) {
+          const x = JSON.parse(saqlanganXodim);
+          setXodim(x);
+          pushTokenRoyxatOl(x.id);
+        }
+        if (saqlanganTema) {
+          setIsDarkMode(saqlanganTema === 'dark');
+        }
+      } catch (e) {}
+
       setTayyor(true);
       eslatmaOrnat();
     })();
+
     const unsub = avtoSyncYoq();
     return unsub;
   }, []);
 
+  // Temani o'zgartirib global saqlash funksiyasi (buni istalgan screen'ga prop orqali uzatishingiz mumkin)
+  const toggleTheme = async () => {
+    try {
+      const yangiHolat = !isDarkMode;
+      setIsDarkMode(yangiHolat);
+      await AsyncStorage.setItem('THEME', yangiHolat ? 'dark' : 'light');
+    } catch (e) {}
+  };
+
   if (!tayyor) return (
-    <View style={{ flex: 1, justifyContent: 'center', backgroundColor: RANG.fon }}>
+    <View style={{ flex: 1, justifyContent: 'center', backgroundColor: isDarkMode ? '#0F172A' : RANG.fon }}>
       <ActivityIndicator size="large" color={RANG.asosiy} />
     </View>
   );
 
   return (
     <NavigationContainer>
-      <StatusBar style="dark" />
-      <Stack.Navigator screenOptions={{ headerShown: false }}
-        initialRouteName={xodim ? 'Home' : 'Login'}>
-        <Stack.Screen name="Login" component={LoginScreen} />
-        <Stack.Screen name="Home" component={HomeScreen} />
-        <Stack.Screen name="NewReport" component={NewReportScreen} />
-        <Stack.Screen name="Stage" component={StageScreen} />
-        <Stack.Screen name="Camera" component={CameraScreen} />
-        <Stack.Screen name="MyReports" component={MyReportsScreen} />
-        <Stack.Screen name="PasswordChange" component={PasswordChangeScreen} />
+      <StatusBar style={isDarkMode ? "light" : "dark"} />
+      <Stack.Navigator 
+        screenOptions={{ headerShown: false }}
+        initialRouteName={xodim ? 'Home' : 'Login'}
+      >
+        {/* Screen'larga isDarkMode va toggleTheme funksiyasini yuborish uchun initialParams yoki children ishlatish mumkin */}
+        <Stack.Screen name="Login" component={LoginScreen} initialParams={{ isDarkMode, toggleTheme }} />
+        <Stack.Screen name="Home" component={HomeScreen} initialParams={{ isDarkMode, toggleTheme }} />
+        <Stack.Screen name="NewReport" component={NewReportScreen} initialParams={{ isDarkMode, toggleTheme }} />
+        <Stack.Screen name="Stage" component={StageScreen} initialParams={{ isDarkMode, toggleTheme }} />
+        <Stack.Screen name="Camera" component={CameraScreen} initialParams={{ isDarkMode, toggleTheme }} />
+        <Stack.Screen name="MyReports" component={MyReportsScreen} initialParams={{ isDarkMode, toggleTheme }} />
+        <Stack.Screen name="PasswordChange" component={PasswordChangeScreen} initialParams={{ isDarkMode, toggleTheme }} />
       </Stack.Navigator>
     </NavigationContainer>
   );
