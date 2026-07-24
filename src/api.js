@@ -5,13 +5,18 @@ export async function post(action, data) {
   const res = await fetch(API_URL, {
     method: 'POST',
     headers: { 'Content-Type': 'text/plain;charset=utf-8' },
-    body: JSON.stringify({ kalit: KALIT, action, ...data })
+    body: JSON.stringify({ kalit: KALIT, action, ...data }),
+    redirect: 'follow' // MUHIM: Shu qator qolib ketgan edi
   });
   return res.json();
 }
+
 export async function get(action, params = {}) {
   const q = new URLSearchParams({ kalit: KALIT, action, ...params }).toString();
-  const res = await fetch(API_URL + '?' + q);
+  const res = await fetch(API_URL + '?' + q, {
+    method: 'GET',
+    redirect: 'follow' // MUHIM: Shu qator qolib ketgan edi
+  });
   return res.json();
 }
 
